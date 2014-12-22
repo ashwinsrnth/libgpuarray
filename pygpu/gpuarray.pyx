@@ -47,6 +47,7 @@ cdef void *call_compiler_python(const char *src, size_t sz,
         return NULL
 
 ctypedef void *(*comp_f)(const char *, size_t, size_t *, int*)
+ctypedef unsigned long long int uint64_t
 
 def set_cuda_compiler_fn(fn):
     """
@@ -839,6 +840,14 @@ def from_gpudata(size_t data, offset, dtype, shape, GpuContext context=None,
     finally:
         free(cdims)
         free(cstrides)
+
+def get_raw_ptr(size_t data):
+    cdef uint64_t (*cuda_get_ptr)(gpudata *)
+    cuda_get_ptr = <uint64_t (*)(gpudata*)>gpuarray_get_extension("cuda_get_ptr")
+    if cuda_get_ptr == NULL:
+        raise RuntimeError, "cuda_get_ptr extension is absent"
+    ptr = cuda_get_ptr(<gpudata *>data)
+    return ptr
 
 def array(proto, dtype=None, copy=True, order=None, int ndmin=0,
           GpuContext context=None, cls=None):
